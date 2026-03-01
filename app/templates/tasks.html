@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Tasks · Mind Flayer{% endblock %}
+{% block page_title %}Tasks{% endblock %}
+{% block page_subtitle %}Manage and track your work items{% endblock %}
+
+{% block content %}
+
+<!-- Filters + Add button -->
+<div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+    <!-- Filter pills -->
+    <div class="flex gap-2 flex-wrap">
+        <button onclick="filterTasks('all')" id="filter-all"
+            class="px-4 py-2 rounded-xl text-sm font-medium transition glass-purple"
+            style="color:var(--accent);">All</button>
+        <button onclick="filterTasks('pending')" id="filter-pending"
+            class="px-4 py-2 rounded-xl text-sm font-medium transition glass"
+            style="color:var(--text-muted);">Pending</button>
+        <button onclick="filterTasks('done')" id="filter-done"
+            class="px-4 py-2 rounded-xl text-sm font-medium transition glass"
+            style="color:var(--text-muted);">Done</button>
+    </div>
+    <button onclick="document.getElementById('add-task-modal').classList.remove('hidden')"
+        class="btn-primary px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        New Task
+    </button>
+</div>
+
+<!-- Task List -->
+<div class="glass rounded-2xl overflow-hidden">
+    <div id="task-list">
+        {% if tasks %}
+        {% for task in tasks %}
+        <div class="task-row flex flex-col sm:flex-row sm:items-center gap-3 px-5 py-4 border-b last:border-0 transition group {{ 'opacity-60' if task.completed }}"
+            style="border-color:var(--border);" data-status="{{ 'done' if task.completed else 'pending' }}"
+            data-category="{{ task.category.value if task.category else '' }}">
+
+            <div class="flex items-start sm:items-center gap-3 flex-1 min-w-0">
+                <!-- Checkbox -->
+                <button onclick="toggleTask({{ task.id }}, this)"
+                    class="w-6 h-6 rounded-lg border-2 flex items-center justify-center transition flex-shrink-0 mt-0.5 sm:mt-0
+                    {{ 'border-green-500 bg-green-500/20' if task.completed else 'border-white/20 hover:border-purple-500 hover:bg-purple-500/10' }}">
+                    {% if task.completed %}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                        stroke="#4ade80" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    {% endif %}
+                </button>
+                <!-- Content -->
+                <div class="flex-1 min-w-0">
+                    <p class="font-medium text-sm truncate {{ 'line-through' if task.completed }}"
+                        style="color:{% if task.completed %}var(--text-faint){% else %}var(--text){% endif %};">
+                        {{ task.title }}</p>
+                    <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                        <span class="badge badge-purple">{{ task.category.value if task.category else '–' }}</span>
+                        <span class="badge badge-cyan">{{ task.task_type.value if task.task_type else '–' }}</span>
+                        <span class="text-xs" style="color:var(--text-faint);">{{ task.estimated_minutes }}min</span>
+                        {% if task.scheduled_time %}
+                        <span class="text-xs font-mono" style="color:var(--text-faint);">{{
+                            task.scheduled_time.strftime('%b %d, %H:%M') }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right side: priority + energy + delete -->
+            <div class="flex items-center gap-2 pl-9 sm:pl-0">
+                <span
+                    class="badge {% if task.priority.value == 'critical' %}badge-red{% elif task.priority.value == 'high' %}badge-amber{% elif task.priority.value == 'medium' %}badge-cyan{% else %}badge-green{% endif %}">
+                    {{ task.priority.value if task.priority else '–' }}
+                </span>
+                <!-- Energy (zap icon ×N) -->
+                <span class="hidden sm:flex items-center gap-0.5" style="color:var(--text-faint);">
+                    {% set energy_val = task.estimated_energy.value if task.estimated_energy else 'low' %}
+                    {% for i in range(3 if energy_val == 'high' else 2 if energy_val == 'medium' else 1) %}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24"
+                        fill="currentColor" stroke="none">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                    </svg>
+                    {% endfor %}
+                </span>
+                <button onclick="deleteTask({{ task.id }}, this)"
+                    class="opacity-0 group-hover:opacity-100 w-7 h-7 rounded-lg flex items-center justify-center transition"
+                    style="color:var(--text-faint);"
+                    onmouseover="this.style.color='#f87171';this.style.background='rgba(248,113,113,0.1)'"
+                    onmouseout="this.style.color='var(--text-faint)';this.style.background=''">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6l-1 14H6L5 6" />
+                        <path d="M10 11v6" />
+                        <path d="M14 11v6" />
+                        <path d="M9 6V4h6v2" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="text-center py-20">
+            <div
+                class="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 11 12 14 22 4" />
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                </svg>
+            </div>
+            <p class="font-semibold mb-1" style="color:var(--text);">No tasks yet</p>
+            <p class="text-sm" style="color:var(--text-muted);">Start by adding your first task above.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Task Modal -->
+<div id="add-task-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4"
+    style="background:rgba(0,0,0,0.7); backdrop-filter:blur(6px);">
+    <div class="modal-card rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-5">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--accent-dim);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 11 12 14 22 4" />
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                    </svg>
+                </div>
+                <h3 class="text-base font-bold" style="color:var(--text);">Add New Task</h3>
+            </div>
+            <button onclick="document.getElementById('add-task-modal').classList.add('hidden')"
+                class="icon-btn">&times;</button>
+        </div>
+        <form id="add-task-form" class="space-y-4">
+            <div>
+                <label class="block text-xs mb-1.5 font-medium">Task Title <span style="color:#f87171;">*</span></label>
+                <input type="text" name="title" required placeholder="What needs to be done?"
+                    class="w-full rounded-xl px-3 py-2.5 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs mb-1.5 font-medium">Description</label>
+                <textarea name="description" rows="2" placeholder="Context, notes..."
+                    class="w-full rounded-xl px-3 py-2.5 text-sm resize-none"></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs mb-1.5 font-medium">Category</label>
+                    <select name="category" class="w-full rounded-xl px-3 py-2.5 text-sm">
+                        <option value="work">Work</option>
+                        <option value="health">Health</option>
+                        <option value="personal">Personal</option>
+                        <option value="money">Money</option>
+                        <option value="learning">Learning</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs mb-1.5 font-medium">Type</label>
+                    <select name="task_type" class="w-full rounded-xl px-3 py-2.5 text-sm">
+                        <option value="implementation">Implementation</option>
+                        <option value="documentation">Documentation</option>
+                        <option value="creative">Creative</option>
+                        <option value="admin">Admin</option>
+                        <option value="review">Review</option>
+                        <option value="planning">Planning</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs mb-1.5 font-medium">Priority</label>
+                    <select name="priority" class="w-full rounded-xl px-3 py-2.5 text-sm">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs mb-1.5 font-medium">Energy Level</label>
+                    <select name="estimated_energy" class="w-full rounded-xl px-3 py-2.5 text-sm">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs mb-1.5 font-medium">Est. Minutes</label>
+                    <input type="number" name="estimated_minutes" value="30" min="5"
+                        class="w-full rounded-xl px-3 py-2.5 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs mb-1.5 font-medium">Scheduled Time</label>
+                    <input type="datetime-local" name="scheduled_time" class="w-full rounded-xl px-3 py-2.5 text-sm">
+                </div>
+            </div>
+            <button type="submit" class="btn-primary w-full py-3 rounded-xl font-semibold text-sm mt-2">Add
+                Task</button>
+            <p id="task-err" class="text-xs text-center hidden" style="color:#f87171;"></p>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function toggleTask(id, btn) {
+        const r = await fetch(`/api/tasks/${id}/toggle`, { method: 'POST' });
+        if (r.ok) window.location.reload();
+    }
+    async function deleteTask(id, btn) {
+        if (!confirm('Delete this task?')) return;
+        const r = await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+        if (r.ok) btn.closest('.task-row').remove();
+    }
+    function filterTasks(filter) {
+        document.querySelectorAll('.task-row').forEach(row => {
+            row.style.display = filter === 'all' || row.dataset.status === filter ? '' : 'none';
+        });
+        // Update button styles
+        ['all', 'pending', 'done'].forEach(f => {
+            const btn = document.getElementById('filter-' + f);
+            if (f === filter) {
+                btn.style.color = 'var(--accent)';
+                btn.className = btn.className.replace('glass ', 'glass-purple ');
+            } else {
+                btn.style.color = 'var(--text-muted)';
+                btn.className = btn.className.replace('glass-purple ', 'glass ');
+            }
+        });
+    }
+    document.getElementById('add-task-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const errEl = document.getElementById('task-err');
+        errEl.classList.add('hidden');
+        const fd = new FormData(this);
+        const payload = {};
+        fd.forEach((v, k) => { if (v) payload[k] = v; });
+        if (payload.estimated_minutes) payload.estimated_minutes = parseInt(payload.estimated_minutes);
+        if (!payload.scheduled_time) delete payload.scheduled_time;
+        const btn = this.querySelector('button[type=submit]');
+        btn.textContent = 'Adding…'; btn.disabled = true;
+        const r = await fetch('/api/tasks/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (r.ok) { document.getElementById('add-task-modal').classList.add('hidden'); window.location.reload(); }
+        else { const err = await r.json(); errEl.textContent = JSON.stringify(err.detail); errEl.classList.remove('hidden'); btn.textContent = 'Add Task'; btn.disabled = false; }
+    });
+</script>
+{% endblock %}

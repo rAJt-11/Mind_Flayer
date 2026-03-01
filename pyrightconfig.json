@@ -1,0 +1,15 @@
+{
+  "include": [
+    ".",
+    "app",
+    "tests"
+  ],
+  "pythonVersion": "3.11",
+  "venvPath": ".",
+  "venv": ".venv",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": true,
+  "reportMissingModuleSource": false,
+  "reportUndefinedVariable": false,
+  "useLibraryCodeForTypes": true
+}

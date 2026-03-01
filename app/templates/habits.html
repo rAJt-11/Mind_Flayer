@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Habits · Mind Flayer{% endblock %}
+{% block page_title %}Habits{% endblock %}
+{% block page_subtitle %}Build systems, not goals{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-wrap justify-between items-center gap-3 mb-5">
+    <p class="text-sm" style="color:var(--text-muted);">Small daily actions compound into extraordinary results.</p>
+    <button onclick="document.getElementById('add-habit-modal').classList.remove('hidden')"
+        class="btn-primary px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        New Habit
+    </button>
+</div>
+
+{% if habits %}
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+    {% for habit in habits %}
+    <div class="glass card-hover rounded-2xl p-5 flex flex-col {{ 'opacity-50' if not habit.is_active }}">
+        <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-3">
+                <!-- Habit icon (colored initial badge as fallback for emoji) -->
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                    style="background:var(--accent-dim);">
+                    {{ habit.icon or '⭐' }}
+                </div>
+                <div>
+                    <h3 class="font-semibold text-sm" style="color:var(--text);">{{ habit.name }}</h3>
+                    <p class="text-xs capitalize" style="color:var(--text-faint);">
+                        {{ habit.frequency.value if habit.frequency else 'daily' }} · {{ habit.category }}
+                    </p>
+                </div>
+            </div>
+            <span
+                class="badge {% if habit.streak_count >= 21 %}badge-amber{% elif habit.streak_count >= 7 %}badge-green{% elif habit.streak_count >= 1 %}badge-cyan{% else %}badge-red{% endif %} flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="currentColor"
+                    stroke="none" class="mr-0.5">
+                    <path
+                        d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+                </svg>
+                {{ habit.streak_count }}d
+            </span>
+        </div>
+
+        {% if habit.description %}
+        <p class="text-xs mb-3 leading-relaxed" style="color:var(--text-muted);">{{ habit.description }}</p>
+        {% endif %}
+
+        <!-- Progress bar -->
+        <div class="mb-4">
+            <div class="flex justify-between text-xs mb-1" style="color:var(--text-faint);">
+                <span>Streak progress</span>
+                <span>{{ habit.streak_count if habit.streak_count <= 30 else 30 }}/30 days</span>
+            </div>
+            <div class="w-full rounded-full h-1.5" style="background:var(--border);">
+                <div class="h-1.5 rounded-full bg-gradient-to-r from-purple-500 to-blue-500"
+                    style="width: {{ [(habit.streak_count / 30 * 100)|round|int, 100]|min }}%;"></div>
+            </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="grid grid-cols-3 text-center text-xs border-t pt-3 mb-4"
+            style="border-color:var(--border); color:var(--text-faint);">
+            <div>
+                <p class="font-bold text-sm mb-0.5" style="color:var(--text);">{{ habit.total_completions }}</p>
+                <p>Total</p>
+            </div>
+            <div>
+                <p class="font-bold text-sm mb-0.5 text-amber-400">{{ habit.longest_streak }}</p>
+                <p>Best</p>
+            </div>
+            <div>
+                <p class="font-bold text-sm mb-0.5" style="color:var(--text-muted);">{{ habit.reminder_time or '–' }}
+                </p>
+                <p>Remind</p>
+            </div>
+        </div>
+
+        <!-- Action -->
+        <div class="mt-auto">
+            {% if habit.is_active %}
+            <button onclick="completeHabit({{ habit.id }}, this)"
+                class="w-full py-2.5 rounded-xl text-sm font-semibold glass-green transition border flex items-center justify-center gap-2"
+                style="color:#34d399; border-color:rgba(52,211,153,0.3);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Mark Done Today
+            </button>
+            {% else %}
+            <div class="text-center text-xs py-2" style="color:var(--text-faint);">Habit paused</div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<div class="glass rounded-2xl text-center py-20">
+    <div
+        class="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center mx-auto mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="white" stroke="none">
+            <path
+                d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+        </svg>
+    </div>
+    <h3 class="text-lg font-semibold mb-2" style="color:var(--text);">No habits yet</h3>
+    <p class="text-sm mb-6" style="color:var(--text-muted);">Start small. Even one habit, done daily, rewires your
+        identity.</p>
+    <button onclick="document.getElementById('add-habit-modal').classList.remove('hidden')"
+        class="btn-primary px-6 py-3 rounded-xl font-semibold">Add Your First Habit</button>
+</div>
+{% endif %}
+
+<!-- Add Habit Modal -->
+<div id="add-habit-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4"
+    style="background:rgba(0,0,0,0.7); backdrop-filter:blur(6px);">
+    <div class="modal-card rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-5">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style="background:rgba(52,211,153,0.15);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#34d399"
+                        stroke="none">
+                        <path
+                            d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+                    </svg>
+                </div>
+                <h3 class="text-base font-bold" style="color:var(--text);">New Habit</h3>
+            </div>
+            <button onclick="document.getElementById('add-habit-modal').classList.add('hidden')"
+                class="icon-btn">&times;</button>
+        </div>
+        <form id="add-habit-form" class="space-y-4">
+            <div>
+                <label class="block text-xs mb-1.5 font-medium">Habit Name <span style="color:#f87171;">*</span></label>
+                <input type="text" name="name" required placeholder="e.g. Morning meditation"
+                    class="w-full rounded-xl px-3 py-2.5 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs mb-1.5 font-medium">Description</label>
+                <textarea name="description" rows="2" placeholder="Why does this matter to you?"
+                    class="w-full rounded-xl px-3 py-2.5 text-sm resize-none"></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs mb-1.5 font-medium">Category</label>
+                    <select name="category" class="w-full rounded-xl px-3 py-2.5 text-sm">
+                        <option value="health">Health</option>
+                        <option value="mind">Mind</option>
+                        <option value="work">Work</option>
+                        <option value="fitness">Fitness</option>
+                        <option value="learning">Learning</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs mb-1.5 font-medium">Frequency</label>
+                    <select name="frequency" class="w-full rounded-xl px-3 py-2.5 text-sm">
+                        <option value="daily">Daily</option>
+                        <option value="weekdays">Weekdays</option>
+                        <option value="weekends">Weekends</option>
+                        <option value="weekly">Weekly</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs mb-1.5 font-medium">Reminder Time</label>
+                    <input type="time" name="reminder_time" class="w-full rounded-xl px-3 py-2.5 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs mb-1.5 font-medium">Icon (emoji)</label>
+                    <input type="text" name="icon" value="⭐" maxlength="4"
+                        class="w-full rounded-xl px-3 py-2.5 text-sm text-center text-xl">
+                </div>
+            </div>
+            <button type="submit" class="btn-primary w-full py-3 rounded-xl font-semibold text-sm">Create Habit</button>
+            <p id="habit-err" class="text-xs text-center hidden" style="color:#f87171;"></p>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function completeHabit(id, btn) {
+        btn.innerHTML = '…'; btn.disabled = true;
+        const r = await fetch(`/api/habits/${id}/complete`, { method: 'POST' });
+        if (r.ok) window.location.reload();
+        else { btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Mark Done Today'; btn.disabled = false; }
+    }
+    document.getElementById('add-habit-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const errEl = document.getElementById('habit-err');
+        errEl.classList.add('hidden');
+        const fd = new FormData(this);
+        const payload = {};
+        fd.forEach((v, k) => { if (v) payload[k] = v; });
+        const btn = this.querySelector('button[type=submit]');
+        btn.textContent = 'Creating…'; btn.disabled = true;
+        const r = await fetch('/api/habits/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (r.ok) { document.getElementById('add-habit-modal').classList.add('hidden'); window.location.reload(); }
+        else { const err = await r.json(); errEl.textContent = JSON.stringify(err.detail); errEl.classList.remove('hidden'); btn.textContent = 'Create Habit'; btn.disabled = false; }
+    });
+</script>
+{% endblock %}

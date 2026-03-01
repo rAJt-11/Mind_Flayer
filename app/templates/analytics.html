@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics · Mind Flayer{% endblock %}
+{% block page_title %}Analytics{% endblock %}
+{% block page_subtitle %}Understand your patterns. Optimise your performance.{% endblock %}
+
+{% block content %}
+
+{% if latest %}
+<!-- KPI Cards -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    {% for label, val, icon, card_class in [
+    ("Productivity", latest.weekly_productivity_score|round|int ~ "%", '<svg xmlns="http://www.w3.org/2000/svg"
+        width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a89aff" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round">
+        <path d="m22 2-7 20-4-9-9-4Z" />
+        <path d="M22 2 11 13" />
+    </svg>', "glass-purple"),
+    ("Task Rate", latest.task_completion_rate|round|int ~ "%", '<svg xmlns="http://www.w3.org/2000/svg" width="22"
+        height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round">
+        <polyline points="9 11 12 14 22 4" />
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+    </svg>', "glass-cyan"),
+    ("Avg Sleep", latest.sleep_average|round(1) ~ "h", '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+        viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+    </svg>', "glass-amber"),
+    ("Habit Score", latest.habit_consistency_score|round|int ~ "%", '<svg xmlns="http://www.w3.org/2000/svg" width="22"
+        height="22" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round">
+        <path
+            d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+    </svg>', "glass-green"),
+    ] %}
+    <div class="{{ card_class }} rounded-2xl p-5">
+        <span>{{ icon | safe }}</span>
+        <p class="text-2xl font-bold mt-2" style="color:var(--text);">{{ val }}</p>
+        <p class="text-xs mt-1" style="color:var(--text-muted);">{{ label }}</p>
+        <p class="text-xs mt-0.5" style="color:var(--text-faint);">{{ latest.week_start_date }} – {{
+            latest.week_end_date }}</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Charts Row -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="glass rounded-2xl p-6">
+        <h3 class="font-bold mb-4" style="color:var(--text);">Weekly Productivity Trend</h3>
+        <canvas id="productivityChart" height="180"></canvas>
+    </div>
+    <div class="glass rounded-2xl p-6">
+        <h3 class="font-bold mb-4" style="color:var(--text);">Sleep vs Mood Correlation</h3>
+        <canvas id="sleepMoodChart" height="180"></canvas>
+    </div>
+</div>
+
+<!-- Task Rates -->
+<div class="glass rounded-2xl p-6 mb-6">
+    <h3 class="font-bold mb-4" style="color:var(--text);">Task Completion Rate</h3>
+    <canvas id="taskRateChart" height="100"></canvas>
+</div>
+
+<!-- Wins & Misses -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="glass-green rounded-2xl p-6">
+        <h3 class="font-bold mb-4" style="color:var(--text);">Wins This Week</h3>
+        <div class="space-y-2 text-sm leading-relaxed whitespace-pre-line" style="color:var(--text-muted);">{{
+            latest.wins }}</div>
+    </div>
+    <div class="glass-amber rounded-2xl p-6">
+        <h3 class="font-bold mb-4" style="color:var(--text);">Missed Targets</h3>
+        <div class="space-y-2 text-sm leading-relaxed whitespace-pre-line" style="color:var(--text-muted);">{{
+            latest.missed_targets }}
+        </div>
+    </div>
+</div>
+
+<!-- Suggestions & Focus -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="glass-purple rounded-2xl p-6">
+        <h3 class="font-bold mb-4" style="color:var(--text);">Improvement Suggestions</h3>
+        <div class="text-sm leading-relaxed whitespace-pre-line" style="color:var(--text-muted);">{{
+            latest.improvement_suggestions }}
+        </div>
+    </div>
+    <div class="glass rounded-2xl p-6">
+        <h3 class="font-bold mb-4" style="color:var(--text);">Next Week Focus</h3>
+        <p class="text-sm leading-relaxed" style="color:var(--text-muted);">{{ latest.recommended_focus }}</p>
+        <div class="mt-6 border-t border-white/10 pt-4 grid grid-cols-2 gap-3 text-xs">
+            <div>
+                <p class="text-xs" style="color:var(--text-faint);">Best Day</p>
+                <p class="font-semibold" style="color:var(--text);">{{ latest.best_productivity_day or '–' }}</p>
+            </div>
+            <div>
+                <p class="text-xs" style="color:var(--text-faint);">High Stress Day</p>
+                <p class="font-semibold" style="color:var(--text);">{{ latest.worst_productivity_day or '–' }}</p>
+            </div>
+            <div>
+                <p class="text-xs" style="color:var(--text-faint);">Tasks Done</p>
+                <p class="font-semibold" style="color:var(--text);">{{ latest.tasks_completed }} / {{ latest.tasks_total
+                    }}</p>
+            </div>
+            <div>
+                <p class="text-xs" style="color:var(--text-faint);">Avg Energy</p>
+                <p class="font-semibold" style="color:var(--text);">{{ latest.energy_average|round(1) }}/10</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trigger Manual Review -->
+<div class="mt-6 text-center">
+    <button onclick="triggerReview()"
+        class="px-6 py-3 rounded-xl font-semibold text-sm glass-purple border border-purple-500/30 text-purple-300 hover:bg-purple-500/20 transition">
+        Recompute Weekly Review
+    </button>
+</div>
+
+{% else %}
+<div class="glass rounded-2xl text-center py-20">
+    <div
+        class="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center mx-auto mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10" />
+            <line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+        </svg>
+    </div>
+    <h3 class="text-lg font-semibold mb-2" style="color:var(--text);">No analytics yet</h3>
+    <p class="text-sm mb-6" style="color:var(--text-muted);">Log your daily check-ins for a week, then generate your
+        first review.</p>
+    <button onclick="triggerReview()" class="btn-primary px-6 py-3 rounded-xl font-semibold">Generate Weekly Review
+        Now</button>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const weekLabels = {{ week_labels| safe }};
+    const productivityData = {{ productivity_data| safe }};
+    const moodData = {{ mood_data| safe }};
+    const sleepData = {{ sleep_data| safe }};
+    const taskRateData = {{ task_rate_data| safe }};
+
+    const gradientFn = (ctx, color1, color2) => {
+        const g = ctx.createLinearGradient(0, 0, 0, 200);
+        g.addColorStop(0, color1); g.addColorStop(1, color2);
+        return g;
+    };
+
+    // Productivity Chart
+    const pCtx = document.getElementById('productivityChart');
+    if (pCtx) {
+        new Chart(pCtx, {
+            type: 'line',
+            data: {
+                labels: weekLabels,
+                datasets: [{
+                    label: 'Productivity %',
+                    data: productivityData,
+                    borderColor: '#a855f7',
+                    backgroundColor: 'rgba(168,85,247,0.15)',
+                    fill: true, tension: 0.4, pointBackgroundColor: '#a855f7', pointRadius: 5,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(2,8,23,0.9)', borderColor: 'rgba(168,85,247,0.3)', borderWidth: 1 } },
+                scales: { y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { grid: { color: 'rgba(255,255,255,0.04)' } } }
+            }
+        });
+    }
+
+    // Sleep vs Mood Chart
+    const smCtx = document.getElementById('sleepMoodChart');
+    if (smCtx) {
+        new Chart(smCtx, {
+            type: 'bar',
+            data: {
+                labels: weekLabels,
+                datasets: [
+                    { label: 'Sleep (h)', data: sleepData, backgroundColor: 'rgba(59,130,246,0.6)', borderColor: '#3b82f6', borderWidth: 1, borderRadius: 6 },
+                    { label: 'Mood /10', data: moodData, backgroundColor: 'rgba(168,85,247,0.6)', borderColor: '#a855f7', borderWidth: 1, borderRadius: 6 }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'top' }, tooltip: { backgroundColor: 'rgba(2,8,23,0.9)' } },
+                scales: { y: { min: 0, max: 12, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { grid: { color: 'rgba(255,255,255,0.04)' } } }
+            }
+        });
+    }
+
+    // Task Rate Chart
+    const trCtx = document.getElementById('taskRateChart');
+    if (trCtx) {
+        new Chart(trCtx, {
+            type: 'bar',
+            data: {
+                labels: weekLabels,
+                datasets: [{ label: 'Completion %', data: taskRateData, backgroundColor: 'rgba(34,197,94,0.5)', borderColor: '#22c55e', borderWidth: 1, borderRadius: 6 }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(2,8,23,0.9)' } },
+                scales: { y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { grid: { color: 'rgba(255,255,255,0.04)' } } }
+            }
+        });
+    }
+
+    async function triggerReview() {
+        const btn = event.target;
+        btn.textContent = 'Computing…';
+        btn.disabled = true;
+        const r = await fetch('/api/analytics/compute', { method: 'POST' });
+        if (r.ok) window.location.reload();
+        else { btn.textContent = 'Recompute Weekly Review'; btn.disabled = false; alert('Error computing review'); }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Plan · Mind Flayer{% endblock %}
+{% block page_title %}Daily Plan{% endblock %}
+{% block page_subtitle %}Your AI-generated battle plan for today{% endblock %}
+
+{% block content %}
+
+{% if plan_data %}
+<!-- Greeting Banner -->
+<div class="glass-purple rounded-2xl p-5 mb-5">
+    <div class="flex items-start gap-4">
+        <div
+            class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a4 4 0 0 1 4 4 4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4" />
+                <path d="M12 14c-6.1 0-8 2.7-8 4v1h16v-1c0-1.3-1.9-4-8-4" />
+            </svg>
+        </div>
+        <div class="flex-1 min-w-0">
+            <span class="badge badge-purple mb-2 inline-block capitalize">{{ plan_data.readiness_level }} readiness · {{
+                plan_data.readiness_score }}/100</span>
+            <p class="text-sm leading-relaxed italic" style="color:var(--text-muted);">"{{ plan_data.greeting }}"</p>
+        </div>
+    </div>
+</div>
+
+<!-- State Assessment -->
+<div class="glass rounded-2xl p-5 mb-5">
+    <h3 class="font-semibold text-xs uppercase tracking-wider mb-2 flex items-center gap-2"
+        style="color:var(--text-muted);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        State Assessment
+    </h3>
+    <p class="text-sm leading-relaxed" style="color:var(--text-muted);">{{ plan_data.state_assessment }}</p>
+</div>
+
+{% if plan_data.warnings %}
+<div class="glass-amber rounded-2xl p-5 mb-5">
+    <h3 class="font-semibold text-xs text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+        Warnings
+    </h3>
+    {% for w in plan_data.warnings %}
+    <p class="text-sm text-amber-200 leading-relaxed mb-1 flex gap-2">
+        <span class="flex-shrink-0 mt-0.5" style="color:#fbbf24;">›</span> {{ w }}
+    </p>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Plan Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+    <!-- Major Tasks -->
+    <div class="glass rounded-2xl p-5">
+        <h3 class="font-bold mb-4 flex items-center gap-2" style="color:var(--text);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
+            Major Work Blocks
+        </h3>
+        {% for t in plan_data.major_tasks %}
+        <div class="border-b last:border-0 pb-4 mb-4 last:pb-0 last:mb-0" style="border-color:var(--border);">
+            <div class="flex flex-wrap items-center gap-2 mb-1">
+                <span class="font-mono text-xs text-purple-400 rounded px-2 py-0.5"
+                    style="background:rgba(124,111,247,0.1);">{{ t.time_slot }}</span>
+                <span class="badge badge-purple">{{ t.task_type }}</span>
+                <span
+                    class="badge {% if t.energy_required == 'high' %}badge-red{% elif t.energy_required == 'medium' %}badge-amber{% else %}badge-green{% endif %}">{{
+                    t.energy_required }}</span>
+            </div>
+            <p class="font-semibold text-sm mb-1" style="color:var(--text);">{{ t.title }}</p>
+            <p class="text-xs" style="color:var(--text-faint);">{{ t.duration_minutes }} min · {{ t.rationale }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Minor Tasks -->
+    <div class="glass rounded-2xl p-5">
+        <h3 class="font-bold mb-4 flex items-center gap-2" style="color:var(--text);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6" />
+                <line x1="8" y1="12" x2="21" y2="12" />
+                <line x1="8" y1="18" x2="21" y2="18" />
+                <line x1="3" y1="6" x2="3.01" y2="6" />
+                <line x1="3" y1="12" x2="3.01" y2="12" />
+                <line x1="3" y1="18" x2="3.01" y2="18" />
+            </svg>
+            Support Tasks
+        </h3>
+        {% for t in plan_data.minor_tasks %}
+        <div class="border-b last:border-0 pb-3 mb-3 last:pb-0 last:mb-0" style="border-color:var(--border);">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="font-mono text-xs text-cyan-400 rounded px-2 py-0.5"
+                    style="background:rgba(56,189,248,0.1);">{{ t.time_slot }}</span>
+            </div>
+            <p class="text-sm font-medium" style="color:var(--text);">{{ t.title }}</p>
+            <p class="text-xs mt-0.5" style="color:var(--text-faint);">{{ t.rationale }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Break Schedule -->
+    <div class="glass rounded-2xl p-5">
+        <h3 class="font-bold mb-4 flex items-center gap-2" style="color:var(--text);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="10" y1="15" x2="10" y2="9" />
+                <line x1="14" y1="15" x2="14" y2="9" />
+            </svg>
+            Recovery Schedule
+        </h3>
+        {% for b in plan_data.break_schedule %}
+        <div class="flex items-start gap-3 border-b last:border-0 py-2" style="border-color:var(--border);">
+            <span class="font-mono text-xs text-green-400 w-14 flex-shrink-0 mt-0.5">{{ b.time }}</span>
+            <div>
+                <p class="text-sm font-medium" style="color:var(--text);">{{ b.duration }}</p>
+                <p class="text-xs" style="color:var(--text-faint);">{{ b.activity }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Health Reminders -->
+    <div class="glass-green rounded-2xl p-5">
+        <h3 class="font-bold mb-4 flex items-center gap-2" style="color:var(--text);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            Wellness Reminders
+        </h3>
+        {% for r in plan_data.health_reminders %}
+        <p class="text-sm py-2 border-b last:border-0 leading-relaxed"
+            style="color:var(--text-muted); border-color:var(--border);">{{ r }}</p>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Evening Reflection -->
+<div class="glass rounded-2xl p-5">
+    <h3 class="font-bold mb-3 flex items-center gap-2" style="color:var(--text);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a89aff"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+        </svg>
+        Evening Reflection
+    </h3>
+    <div class="text-sm leading-relaxed whitespace-pre-line" style="color:var(--text-muted);">{{
+        plan_data.evening_prompt }}</div>
+</div>
+
+{% else %}
+<div class="glass rounded-2xl text-center py-20">
+    <div
+        class="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center mx-auto mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+        </svg>
+    </div>
+    <h3 class="text-lg font-semibold mb-2" style="color:var(--text);">No plan for today yet</h3>
+    <p class="text-sm mb-6" style="color:var(--text-muted);">Complete your morning check-in to generate your
+        personalised AI battle plan.</p>
+    <a href="/" class="btn-primary px-6 py-3 rounded-xl font-semibold inline-block">Go to Dashboard →</a>
+</div>
+{% endif %}
+
+{% endblock %}
