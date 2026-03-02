@@ -16,10 +16,10 @@ class Settings(BaseSettings):
     DEBUG: bool = Field(default=True)
 
     # ─── Database ─────────────────────────────────────────────────────────────
-    MSSQL_SERVER: str = Field(default="10.40.2.120")
-    MSSQL_DATABASE: str = Field(default="SCM_DEV")
-    MSSQL_USERNAME: str = Field(default="sa")
-    MSSQL_PASSWORD: str = Field(default="Haier@2025")
+    MSSQL_SERVER: str = Field(default="TestDB")
+    MSSQL_DATABASE: str = Field(default="Mind_Flayer")
+    MSSQL_USERNAME: str = Field(default="test")
+    MSSQL_PASSWORD: str = Field(default="Test@2025")
     MSSQL_DRIVER: str = Field(default="ODBC Driver 17 for SQL Server")
     
     DB_URL: str | None = Field(default=None, alias="DATABASE_URL")
